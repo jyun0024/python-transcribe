@@ -11,6 +11,10 @@ import tqdm
 # pip install pymediainfo
 from pymediainfo import MediaInfo
 
+import subprocess
+
+# pip install pysimplegui
+import PySimpleGUI as sg
 
 import os
 import tkinter
@@ -23,8 +27,8 @@ def main():
     # tinu < base < small < medium < turbo < large
     model_name: str = "small"
     model = whisper.load_model(name=model_name, device="cpu")
-    # GPUのあるPCなら高速化可能
     if model.device == "cuda":
+        """GPUのあるPCなら高速化可能"""
         _ = model.half()
         _ = model.cuda()
 
@@ -39,8 +43,12 @@ def main():
     print("\n文字お越しが完了しました")
 
 
-# 音声ファイル読み込み
 def read_file() -> str:
+    """音声ファイルを読み込む
+
+    Returns:
+        str: 音声ファイルの絶対パス
+    """
     root = tkinter.Tk()
     root.withdraw()
     fileType = [("", "*.mp3"), ("", "*.wav")]
@@ -49,16 +57,30 @@ def read_file() -> str:
     return file
 
 
-# 音声ファイル読み込み
 def output_result(model, file, duration) -> dict:
+    """音声ファイルを読み込み、文字を返す
+
+    Args:
+        model (Whisper): whisperのload_model
+        file (str): 音声ファイルの絶対パス
+        duration (float): 音声ファイルの再生時間
+
+    Returns:
+        dict: 文字お越しデータ
+    """
     with tqdm.tqdm(total=duration, desc="音声読み込み中") as pbar:
         result: dict = model.transcribe(file, verbose=True, language="ja")
         pbar.update(duration)
     return result
 
 
-# テキストファイルに出力
 def save_result(result):
+    """テキストファイルに出力
+
+    :params result: 出力された文字データ
+    :type result: dict
+
+    """
     with open("文字お越し出力.txt", "w", encoding="utf-8") as f:
         for row in tqdm.tqdm(iterable=result["text"], desc="テキスト出力中"):
             # fp16をfp32に戻す
@@ -70,8 +92,16 @@ def save_result(result):
                 print(row, end="", file=f)
 
 
-# 音声ファイルの長さを取得
 def get_audio_duration(file) -> float:
+    """読み込んだ音声ファイルの再生時間を取得する<br>
+    現状ほぼ無意味
+
+    Args:
+        file (str): 音声ファイルの絶対パス
+
+    Returns:
+        float: 音声ファイルの再生時間
+    """
     info = MediaInfo.parse(file)
     for track in info.tracks:
         return track.duration
