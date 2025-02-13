@@ -1,8 +1,8 @@
 # お題「文字お越しアプリ」
-# TODO import 必要なライブラリ
 # whisperの対応バージョンは3.8~11(2025/2/13時点)仮想環境必須
 # pip install --upgrade pip setuptools wheel
 # pip install git+https://github.com/openai/whisper.git
+import tkinter.filedialog
 import whisper
 
 # pip install tqdm
@@ -12,12 +12,17 @@ import tqdm
 from pymediainfo import MediaInfo
 
 
+import os
+import tkinter
+
+
 def main():
     print("文字お越しを開始します\n")
 
     # モデル指定
     # tinu < base < small < medium < turbo < large
-    model = whisper.load_model("small", device="cpu")
+    model_name: str = "small"
+    model = whisper.load_model(name=model_name, device="cpu")
     # GPUのあるPCなら高速化可能
     if model.device == "cuda":
         _ = model.half()
@@ -36,9 +41,11 @@ def main():
 
 # 音声ファイル読み込み
 def read_file() -> str:
-    file: str = (
-        r"C:\Users\jyunya\Desktop\文字お越しPy\音声サンプル\サンプル会議音声.mp3"
-    )
+    root = tkinter.Tk()
+    root.withdraw()
+    fileType = [("", "*.mp3"), ("", "*.wav")]
+    iDir = os.path.abspath(os.path.dirname(__file__))
+    file: str = tkinter.filedialog.askopenfilename(filetypes=fileType, initialdir=iDir)
     return file
 
 
