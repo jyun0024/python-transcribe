@@ -4,8 +4,7 @@
 import whisper
 
 # pip install --upgrade pip setuptools wheel
-# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-# pip install -U openai-whisper
+# pip install git+https://github.com/openai/whisper.git
 
 
 def main():
@@ -14,6 +13,7 @@ def main():
     # モデル指定
     # tinu < base < small < medium < turbo < large
     model = whisper.load_model("small", device="cpu")
+    # GPUのあるPCなら高速化可能
     if model.device == "cuda":
         _ = model.half()
         _ = model.cuda()
