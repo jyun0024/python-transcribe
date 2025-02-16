@@ -3,7 +3,9 @@
 # pip install --upgrade pip setuptools wheel
 # pip install git+https://github.com/openai/whisper.git
 import whisper
-import tkinter.filedialog
+
+# pip install flet
+import flet
 
 # pip install tqdm
 import tqdm
@@ -14,102 +16,127 @@ from pymediainfo import MediaInfo
 import typing
 import subprocess
 import os
+
+# ファイル選択をGUI化するために使用
 import tkinter
+import tkinter.filedialog
 
 
 def main():
+    # 使用者が任意に決められる変数
+    # model_name: str
+    # output_filename: str
+    # page.title = "Basic filled buttons"
+    # page.add(
+    #     flet.FilledButton(text="submit", on_click=main(model_name, output_filename))
+    # )
+
+    tr = Transcribe(model_name="small", output_filename="test")
     print("文字お越しを開始します\n")
-    try:
-    # モデル指定
-    # tinu < base < small < medium < turbo < large
-    # TODO model_nameをユーザが選択できるように
-        model_name: str = "small"
-        model = whisper.load_model(name=model_name, device="cpu")
-        if model.device == "cuda":
-            """GPUのあるPCなら高速化可能"""
-            _ = model.half()
-            _ = model.cuda()
+    tr.transcribe_main()
+    print("\n文字お越しが完了しました")
 
-        file: str
-        root_path: str
-        file, root_path = read_file()
 
-        duration: float = get_audio_duration(file)
+class Transcribe:
+    """文字起こしを行うクラス"""
+
+    def __init__(self, model_name, output_filename):
+        self.select_file: str = ""
+        self.root = tkinter.Tk()
+        self.root_path: str = os.path.abspath(os.path.dirname(__file__))
+        self.model_name: str = model_name
+        self.output_filename: str = output_filename
+
+    def transcribe_main(self):
+        # モデル指定
+        # tiny < base < small < medium < turbo < large
+        self.model = whisper.load_model(name=self.model_name)
+        print(f"device:{self.model.device}")
+        if self.model.device == "cuda":
+            # GPUのあるPCなら高速化可能
+            _ = self.model.half()
+            _ = self.model.cuda()
+
+        # ファイル取り込み、文字お越し
+        self.read_file()
+        duration: float = self.get_audio_duration()
         print(f"音声ファイルの長さ：{duration}ms")
-        result: dict = output_result(model, file, duration)
+        result: dict = self.output_result(duration)
 
-        save_result(result)
+        # アウトプット
+        self.save_result(result, self.output_filename)
+        subprocess.Popen(["explorer", self.root_path], shell=True)
 
-        print("\n文字お越しが完了しました")
-        subprocess.Popen(["explorer", root_path], shell=True)
-    except:
-        print("エラーによる終了")
-        exit()
+    # ファイルを開く
+    def read_file(self):
+        """音声ファイルを読み込む
 
-def read_file() -> typing.Tuple[str, str]:
-    """音声ファイルを読み込む
+        Returns:
+            [str,str]: [音声ファイルの絶対パス , カレントディレクトリ]
+        """
+        self.root.withdraw()
+        fileType = [("", "*.mp3"), ("", "*.wav")]
+        # iDir = os.path.abspath(os.path.dirname(__file__))
+        try:
+            self.select_file = tkinter.filedialog.askopenfilename(
+                filetypes=fileType, initialdir=self.root_path
+            )
+        except FileNotFoundError as e:
+            print("ファイルが見つかりません")
+            print(f"{e.__class__.__name__}: {e}")
+            exit()
 
-    Returns:
-        str,str: 音声ファイルの絶対パス,カレントディレクトリ
-    """
-    root = tkinter.Tk()
-    root.withdraw()
-    fileType = [("", "*.mp3"), ("", "*.wav")]
-    iDir = os.path.abspath(os.path.dirname(__file__))
-    file: str = tkinter.filedialog.askopenfilename(filetypes=fileType, initialdir=iDir)
-    return file, iDir
+    def output_result(self, duration) -> dict:
+        """音声ファイルを読み込み、文字を返す
 
+        Args:
+            model (Whisper): whisperのload_model
+            select_file (str): 音声ファイルの絶対パス
+            duration (float): 音声ファイルの再生時間
 
-def output_result(model, file, duration) -> dict:
-    """音声ファイルを読み込み、文字を返す
+        Returns:
+            dict: 文字お越しデータ
+        """
+        with tqdm.tqdm(total=duration, desc="音声読み込み中") as pbar:
+            result: dict = self.model.transcribe(
+                self.select_file, verbose=True, language="ja"
+            )
+            pbar.update(duration)
+        return result
 
-    Args:
-        model (Whisper): whisperのload_model
-        file (str): 音声ファイルの絶対パス
-        duration (float): 音声ファイルの再生時間
+    def save_result(self, result, filename):
+        """テキストファイルに出力
 
-    Returns:
-        dict: 文字お越しデータ
-    """
-    with tqdm.tqdm(total=duration, desc="音声読み込み中") as pbar:
-        result: dict = model.transcribe(file, verbose=True, language="ja")
-        pbar.update(duration)
-    return result
+        :params result: 出力された文字データ
+        :type result: dict
+        """
+        # TODO 出力ファイル名をユーザが指定できるように
+        with open(f"{filename}.txt", "w", encoding="utf-8") as f:
+            for row in tqdm.tqdm(iterable=result["text"], desc="テキスト出力中"):
+                # fp16をfp32に戻す
+                if isinstance(row, whisper.model.LayerNorm):
+                    row.float()
+                if row == "。" or row == "?" or row == "!":
+                    print(row, file=f)
+                else:
+                    print(row, end="", file=f)
 
+    def get_audio_duration(self) -> float:
+        """読み込んだ音声ファイルの再生時間を取得する<br>
+        現状ほぼ無意味
+        将来的に待機時間の推測に使用する
 
-def save_result(result):
-    """テキストファイルに出力
+        Args:
+            file (str): 音声ファイルの絶対パス
 
-    :params result: 出力された文字データ
-    :type result: dict
-
-    """
-    # TODO 出力ファイル名をユーザが指定できるように
-    with open("文字お越し出力.txt", "w", encoding="utf-8") as f:
-        for row in tqdm.tqdm(iterable=result["text"], desc="テキスト出力中"):
-            # fp16をfp32に戻す
-            if isinstance(row, whisper.model.LayerNorm):
-                row.float()
-            if row == "。" or row == "?" or row == "!":
-                print(row, file=f)
-            else:
-                print(row, end="", file=f)
-
-
-def get_audio_duration(file) -> float:
-    """読み込んだ音声ファイルの再生時間を取得する<br>
-    現状ほぼ無意味
-
-    Args:
-        file (str): 音声ファイルの絶対パス
-
-    Returns:
-        float: 音声ファイルの再生時間
-    """
-    info = MediaInfo.parse(file)
-    for track in info.tracks:
-        return track.duration
+        Returns:
+            float: 音声ファイルの再生時間
+        """
+        info = MediaInfo.parse(self.select_file)
+        for track in info.tracks:
+            return track.duration
 
 
 if __name__ == "__main__":
+    # flet.app(main)
     main()
