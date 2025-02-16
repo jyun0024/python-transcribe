@@ -64,7 +64,7 @@ class Transcribe:
         result: dict = self.output_result(duration)
 
         # アウトプット
-        self.save_result(result, self.output_filename)
+        self.save_result(result)
         subprocess.Popen(["explorer", self.root_path], shell=True)
 
     # ファイルを開く
@@ -104,14 +104,14 @@ class Transcribe:
             pbar.update(duration)
         return result
 
-    def save_result(self, result, filename):
+    def save_result(self, result):
         """テキストファイルに出力
 
         :params result: 出力された文字データ
         :type result: dict
         """
         # TODO 出力ファイル名をユーザが指定できるように
-        with open(f"{filename}.txt", "w", encoding="utf-8") as f:
+        with open(f"{self.output_filename}.txt", "w", encoding="utf-8") as f:
             for row in tqdm.tqdm(iterable=result["text"], desc="テキスト出力中"):
                 # fp16をfp32に戻す
                 if isinstance(row, whisper.model.LayerNorm):
