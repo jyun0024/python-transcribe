@@ -22,19 +22,58 @@ import tkinter
 import tkinter.filedialog
 
 
-def main():
-    # 使用者が任意に決められる変数
-    # model_name: str
-    # output_filename: str
-    # page.title = "Basic filled buttons"
-    # page.add(
-    #     flet.FilledButton(text="submit", on_click=main(model_name, output_filename))
-    # )
+def main(page: flet.Page):
 
-    tr = Transcribe(model_name="small", output_filename="test")
-    print("文字お越しを開始します\n")
-    tr.transcribe_main()
-    print("\n文字お越しが完了しました")
+    page.title = "文字起こしアプリ"
+    page.window.width = 500
+    page.window.height = 600
+    page.window.center()
+
+    def click_submit(e):
+        if radio_list.value is None and input_filename.value == "":
+            t.value = "精度を選択し、出力ファイル名を入力してください"
+            t.update()
+        elif radio_list.value is None:
+            t.value = "精度が選択されていません"
+            t.update()
+        elif input_filename.value == "":
+            t.value = "出力ファイル名が入力されていません"
+            t.update()
+        else:
+            # t.value = f"{radio_list.value}\n{input_filename.value}"
+            t.value = "文字お越しを開始します"
+            t.update()
+            print(radio_list.value)
+            print(input_filename.value)
+            tr = Transcribe(model_name="small", output_filename="test")
+            tr.transcribe_main()
+            t.value = "文字お越しが完了しました"
+            t.update()
+
+    radio_guide_text = flet.Text("精度:必要メモリ")
+    radio_list = flet.RadioGroup(
+        content=flet.Column(
+            [
+                flet.Radio(value="tiny", label="tiny:1GB"),
+                flet.Radio(value="base", label="base:1GB"),
+                flet.Radio(value="small", label="small:2GB"),
+                flet.Radio(value="medium", label="medium:5GB"),
+                flet.Radio(value="large", label="large:10GB"),
+                flet.Radio(value="turbo", label="turbo:6GB"),
+            ]
+        )
+    )
+
+    t = flet.Text()
+
+    input_filename = flet.TextField(label="出力ファイル名を入力してください")
+    page.add(
+        radio_guide_text,
+        radio_list,
+        input_filename,
+        flet.ElevatedButton("Submit", on_click=click_submit),
+        t,
+    )
 
 
 class Transcribe:
@@ -138,5 +177,5 @@ class Transcribe:
 
 
 if __name__ == "__main__":
-    # flet.app(main)
-    main()
+    flet.app(main)
+    # main()
