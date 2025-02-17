@@ -45,7 +45,7 @@ def main(page: flet.Page):
             t.update()
             print(radio_list.value)
             print(input_filename.value)
-            tr = Transcribe(model_name="small", output_filename="test")
+            tr = Transcribe(model_name=radio_list.value, output_filename=input_filename.value)
             tr.transcribe_main()
             t.value = "文字お越しが完了しました"
             t.update()
