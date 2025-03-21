@@ -24,25 +24,6 @@ class Transcribe:
             _ = self.model.half()
             _ = self.model.cuda()
 
-    # 開く
-    # def read_file(self):
-    #     """音声ファイルを読み込む
-
-    #     Returns:
-    #         [str,str]: [音声ファイルの絶対パス , カレントディレクトリ]
-    #     """
-    #     self.root.withdraw()
-    #     fileType = [("", "*.mp3"), ("", "*.wav")]
-    #     # iDir = os.path.abspath(os.path.dirname(__file__))
-    #     try:
-    #         self.select_file = tkinter.filedialog.askopenfilename(
-    #             filetypes=fileType, initialdir=self.root_path
-    #         )
-    #     except FileNotFoundError as e:
-    #         print("ファイルが見つかりません")
-    #         print(f"{e.__class__.__name__}: {e}")
-    #         exit()
-
     # 文字お越し
     def output_result(self) -> dict:
         """音声ファイルを読み込み、文字を返す
