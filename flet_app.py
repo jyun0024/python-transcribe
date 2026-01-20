@@ -4,6 +4,9 @@ import os
 
 # from subject import Subject
 from transcribe import Transcribe
+from multiprocessing import Process, Queue
+from threading import Thread
+import time
 
 # from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
@@ -25,7 +28,7 @@ class FletApp:
         self.page = page
         self.page.title = "文字起こしアプリ"
         self.page.window.width = 500
-        self.page.window.height = 600
+        self.page.window.height = 700
         self.page.window.center()
 
         self.radio_table = flet.RadioGroup(
@@ -214,19 +217,37 @@ class FletApp:
         self.need_time.value = f"推定所要時間：{duration}秒"
         self.need_time.update()
 
-        # pb = flet.ProgressBar()
-        # parsent_t = flet.Text()
-        # finish_time = flet.Text(f"終了予測:{duration}秒")
-        # progres_text = flet.Row(spacing=10, controls=[parsent_t, finish_time])
-        # page.add(progres_text, pb)
+        pb = flet.ProgressBar(height=5,value=0.0)
+        parsent_t = flet.Text()
+        finish_time = flet.Text(f"終了予測:{duration}秒")
+        progres_text = flet.Row(spacing=10, controls=[parsent_t, finish_time])
+        self.page.add(progres_text, pb)
 
-        # def progress_bar():
+        # def progress_bar(max: int, duration: int):
         #     for i in range(0, int(duration) + 1):
         #         pb.value = i / duration
-        #         parsent_t.value = f"{int(pb.value * 100)}%"
+        #         parsent_t.value = f"{int(pb.value * max)}%"
         #         time.sleep(1)
         #         parsent_t.update()
         #         pb.update()
+
+        # thread_bar: Thread = Thread(target=progress_bar, args=(100, duration))
+        # thread_bar.start()
+
+        # queue = Queue()
+        # thread_transcribe: Thread = Thread(target=tr.output_result, args=(queue,))
+        # thread_transcribe.start()
+
+        # thread_transcribe.join()
+        # thread_bar.join()
+
+        # thread_save: Thread = Thread(target=tr.save_result, args=(queue.get(),))
+        # thread_save.start()
+        # thread_save.join()
+
+        # # process_bar = Thread(target=progress_bar, args=(100,1))
+        # thread_bar = Thread(target=progress_bar, args=(100, 1))
+        # thread_bar.start()
 
         # TODO 並列処理の実装 プログレスバーとTranscribeの並列
         # with ThreadPoolExecutor(max_workers=2) as executor:
@@ -241,15 +262,17 @@ class FletApp:
         #     future = executor.submit(tr.output_result, duration)
 
         # 文字お越し
-        result = tr.output_result()
+        # result = tr.output_result()
         # アウトプット
         # result = future.result()
         # print(result)
-        tr.save_result(result)
+        # tr.save_result(result)
+
         # TODO submitボタンの活性化
         subprocess.Popen(["explorer", root], shell=True)
+
         # os.startfile(root)
-        self.all_control_disabled(False)
+        self.all_control_disabled(bool=False)
         self.text.value = "文字お越しが完了しました"
         self.text.update()
         # submit_button.disabled = False

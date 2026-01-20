@@ -25,7 +25,7 @@ class Transcribe:
             _ = self.model.cuda()
 
     # 文字お越し
-    def output_result(self) -> dict:
+    def output_result(self,queue) -> dict:
         """音声ファイルを読み込み、文字を返す
 
         Args:
@@ -39,7 +39,7 @@ class Transcribe:
         result: dict = self.model.transcribe(
             self.select_path, language="ja", verbose=True
         )
-
+        queue.put(result)
         return result
 
     # 出力
